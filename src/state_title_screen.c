@@ -5,6 +5,7 @@
 #include "game_modes.h"
 #include "fio.h"
 #include "dx/config.h"
+#include "dx/versioning.h"
 
 #if VERSION_JP
 #define TITLE_WIDTH 272
@@ -28,13 +29,13 @@
 
 
 enum TitleScreenStates {
-    TITLE_STATE_INIT            = 0x00000000,
-    TITLE_STATE_APPEAR          = 0x00000001,
-    TITLE_STATE_HOLD            = 0x00000002,   // show the title screen with PRESS START blinking
-    TITLE_STATE_UNUSED          = 0x00000003,
-    TITLE_STATE_BEGIN_DISMISS   = 0x00000004,
-    TITLE_STATE_DISMISS         = 0x00000005,
-    TITLE_STATE_EXIT            = 0x00000006,
+    TITLE_STATE_INIT            = 0,
+    TITLE_STATE_APPEAR          = 1,
+    TITLE_STATE_HOLD            = 2,   // show the title screen with PRESS START blinking
+    TITLE_STATE_UNUSED          = 3,
+    TITLE_STATE_BEGIN_DISMISS   = 4,
+    TITLE_STATE_DISMISS         = 5,
+    TITLE_STATE_EXIT            = 6,
 };
 
 enum {
@@ -46,14 +47,19 @@ enum {
 
 s16 TitleScreenNextState = NEXT_STATE_NONE;
 
-FileDisplayData gFilesDisplayData[4] = {
+SaveFileSummary gSaveSlotSummary[4] = {
     { .filename = { FILENAME_ERROR } },
     { .filename = { FILENAME_ERROR } },
     { .filename = { FILENAME_ERROR } },
     { .filename = { FILENAME_ERROR } },
 };
 
-u8 gSaveSlotHasData[4] = { TRUE, TRUE, TRUE, TRUE };
+SaveSlotMetadata gSaveSlotMetadata[4] = {
+    { .hasData = TRUE },
+    { .hasData = TRUE },
+    { .hasData = TRUE },
+    { .hasData = TRUE },
+};
 
 s32 PressStart_Alpha = 0; // the opacity of "PRESS START" text
 b32 PressStart_IsVisible = FALSE; // toggles the visibility of "PRESS START"
@@ -100,15 +106,13 @@ typedef struct TitleDataStruct {
 #define COPYRIGHT_WIDTH 144
 #endif
 
-SHIFT_BSS s16 TitleScreen_AppearDelay;
-SHIFT_BSS TitleDataStruct* TitleScreen_ImgList;
-SHIFT_BSS s32* TitleScreen_ImgList_Logo;
-SHIFT_BSS u8 (*TitleScreen_ImgList_Copyright)[COPYRIGHT_WIDTH];
-SHIFT_BSS s32* TitleScreen_ImgList_PressStart;
-#if VERSION_JP
-SHIFT_BSS s32* TitleScreen_ImgList_CopyrightPalette;
-#endif
-SHIFT_BSS s16 TitleScreen_TimeLeft;
+BSS s16 TitleScreen_AppearDelay;
+BSS TitleDataStruct* TitleScreen_ImgList;
+BSS s32* TitleScreen_ImgList_Logo;
+BSS u8 (*TitleScreen_ImgList_Copyright)[COPYRIGHT_WIDTH];
+BSS s32* TitleScreen_ImgList_PressStart;
+BSS s32* TitleScreen_ImgList_CopyrightPalette;
+BSS s16 TitleScreen_TimeLeft;
 
 void appendGfx_title_screen(void);
 void draw_title_screen_NOP(void);
@@ -124,7 +128,7 @@ void state_init_title_screen(void) {
 
     gOverrideFlags = 0;
     timeFreezeMode = 0;
-    D_8014C248 = TRUE;
+
     general_heap_create();
     clear_printers();
     sfx_set_reverb_mode(0);
